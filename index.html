@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cadastro de Squads</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js" defer></script>
+</head>
+
+<body>
+
+    <!-- Logo e Título -->
+    <div class="header">
+        <img src="https://banqi.com.br/assets/img/ui/logo-internas.svg" alt="Logo BanQi" class="logo">
+        <h1>Mapeamento das Squads</h1>
+    </div>
+
+
+    <!-- Container de botões no topo -->
+    <div class="top-buttons">
+
+        <span id="loading-indicator" style="margin-left: 5px; display: none; color: blue;">Carregando Aguarde..</span>
+        <button id="lock-button" onclick="alternarModoEdicao()">🔒</button>
+        <button id="add-squad-button" onclick="criarSquad(null)">Incluir Squad</button>
+        <!-- Botão de Gerar Relatório -->
+        <button id="generate-report-button" onclick="abrirModalRelatorio()">Gerar Relatório</button>
+    </div>
+
+    <!-- Container principal -->
+    <div class="container">
+        <div id="squads-container" class="squads-container"></div>
+    </div>
+
+    <!-- Modal de Edição de Card -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModal()">&times;</span>
+            <h2>Editar Card</h2>
+            <form id="edit-form">
+                <div class="form-group">
+                    <label for="edit-nome">Nome</label>
+                    <input type="text" id="edit-nome" placeholder="Nome">
+                </div>
+                <div class="form-group">
+                    <label for="edit-cargo">Cargo</label>
+                    <input type="text" id="edit-cargo" placeholder="Cargo">
+                </div>
+                <div class="form-group">
+                    <label for="edit-consultoria">Consultoria</label>
+                    <input type="text" id="edit-consultoria" placeholder="Consultoria">
+                </div>
+                <div class="form-group">
+                    <label for="edit-linkedin">LinkedIn</label>
+                    <input type="url" id="edit-linkedin" placeholder="URL do LinkedIn">
+                </div>
+                <div class="form-group">
+                    <label for="edit-senioridade">Senioridade Atual</label>
+                    <input type="text" id="edit-senioridade" placeholder="Senioridade Atual">
+                </div>
+                <div class="form-group">
+                    <label for="edit-proximo-cargo">Próximo Cargo</label>
+                    <input type="text" id="edit-proximo-cargo" placeholder="Próximo Cargo">
+                </div>
+                <div class="form-group">
+                    <label for="edit-distancia-cargo">Distância do Cargo (%)</label>
+                    <input type="number" id="edit-distancia-cargo" placeholder="Distância do Cargo (%)">
+                </div>
+                <div class="form-group">
+                    <label for="edit-email">E-mail</label>
+                    <input type="email" id="edit-email" placeholder="E-mail">
+                </div>
+                <div class="form-group">
+                    <label for="edit-celular">Celular</label>
+                    <input type="text" id="edit-celular" placeholder="Celular">
+                </div>
+                <div class="form-group">
+                    <label for="edit-principal-stack">Principal Stack</label>
+                    <input type="text" id="edit-principal-stack" placeholder="Principal Stack">
+                </div>
+                <div class="form-group">
+                    <label for="edit-stack-secundaria">Stack Secundária</label>
+                    <input type="text" id="edit-stack-secundaria" placeholder="Stack Secundária">
+                </div>
+                <div class="form-group">
+                    <label for="edit-conhecimento">Conhecimento</label>
+                    <textarea id="edit-conhecimento" placeholder="Conhecimento" rows="4" maxlength="1024"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-link-detalhe">Link Detalhe</label>
+                    <input type="url" id="edit-link-detalhe" placeholder="Link Detalhe">
+                </div>
+                <div class="form-group">
+                    <label for="edit-link-cliente">Link Cliente</label>
+                    <input type="url" id="edit-link-cliente" placeholder="Link Cliente">
+                </div>
+                <div class="form-group">
+                    <label for="edit-foto">Imagem</label>
+                    <input type="file" id="edit-foto" accept="image/*" onchange="previewImagem(event)">
+                </div>
+                <div id="preview-container" contenteditable="true" onpaste="colarImagem(event)">
+                    Cole uma imagem aqui ou escolha uma imagem acima.
+                </div>
+                <button type="button" class="btn-save" onclick="salvarEdicao()">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- Modal de Relatório com Campo de Busca -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModalRelatorio()">&times;</span>
+            <h2>Relatório de Squads</h2>
+            <input type="text" id="search-input" placeholder="Buscar por nome..." oninput="filtrarRelatorio()"
+                style="width: 100%; padding: 8px; margin-bottom: 10px;">
+            <div id="report-content">
+                <!-- Conteúdo do relatório será gerado aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js" defer></script>
+</body>
+
+</html>
