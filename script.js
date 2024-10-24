@@ -83,18 +83,30 @@ function colarImagem(event) {
 function previewImagem(event) {
     const file = event.target.files[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            const previewContainer = document.getElementById('preview-container');
-            previewContainer.style.backgroundImage = `url(${e.target.result})`;
-            previewContainer.setAttribute('data-image', e.target.result); // Salva a imagem como base64
-            previewContainer.textContent = '';
-            previewContainer.style.backgroundSize = 'cover';
-            previewContainer.style.backgroundPosition = 'center';
-        };
-        reader.readAsDataURL(file);
+        // Converte o arquivo para Base64 e o usa para pré-visualização
+        blobToBase64(file)
+            .then(base64Image => {
+                const previewContainer = document.getElementById('preview-container');
+                previewContainer.style.backgroundImage = `url(${base64Image})`; // Define o fundo como Base64
+                previewContainer.setAttribute('data-image', base64Image); // Salva a imagem Base64 para upload
+                previewContainer.style.backgroundSize = 'cover';
+                previewContainer.style.backgroundPosition = 'center';
+            })
+            .catch(error => {
+                console.error('Erro ao converter para Base64:', error);
+            });
     }
 }
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result); // Retorna a imagem em Base64
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob); // Lê o Blob como DataURL
+    });
+}
+
 
 // Função para carregar squads do Firebase
 function carregarSquads() {
@@ -217,7 +229,8 @@ function criarCardDiv(card, squadPath, cardId) {
     cardDiv.className = 'card';
     cardDiv.style.backgroundColor = card.color || '#e0e0e0';
 
-    const imageUrl = card.foto || 'https://via.placeholder.com/30';
+    // Define a imagem usando fotoUrl
+    const imageUrl = card.fotoUrl || 'https://via.placeholder.com/30';
     cardDiv.innerHTML = `
         <img src="${imageUrl}" alt="${card.nome || 'Card sem nome'}" style="width: 50px; height: 50px;">
         <div class="card-info">
@@ -229,11 +242,10 @@ function criarCardDiv(card, squadPath, cardId) {
             </p>
             <p class="cargo">${card.cargo || 'Sem cargo'}</p>
             <p class="consultoria">${card.consultoria || 'Sem consultoria'}</p>
-             </div>
+        </div>
         <div class="link-bolinha">
             <a href="${card.linkCliente}" target="_blank" class="bolinha azul" title="Link Cliente"></a>
             <a href="${card.linkDetalhe}" target="_blank" class="bolinha vermelha" title="Link Detalhe"></a>
-        </div>
         </div>
         <button onclick="editarCard('${squadPath}', '${cardId}')" ${modoEdicao ? '' : 'style="display:none;"'}>Editar</button>
         <button onclick="excluirCard('${squadPath}', '${cardId}')" ${modoEdicao ? '' : 'style="display:none;"'}>Excluir</button>
@@ -274,44 +286,54 @@ function editarCard(squadPath, cardId) {
         document.getElementById('edit-foto').value = '';
 
         const previewContainer = document.getElementById('preview-container');
-        if (card.foto) {
-            previewContainer.style.backgroundImage = `url(${card.foto})`;
-            previewContainer.setAttribute('data-image', card.foto);
+        if (card.fotoUrl) {
+            previewContainer.style.backgroundImage = `url(${card.fotoUrl})`;
+            previewContainer.setAttribute('data-image', card.fotoUrl); // Salva a URL como atributo
         } else {
             previewContainer.style.backgroundImage = '';
             previewContainer.removeAttribute('data-image');
         }
-
         document.getElementById('edit-modal').style.display = 'flex';
     }
 }
 
-// Função para salvar edição do card
+// Função para salvar a edição do card
+// Função para salvar a edição do card
 function salvarEdicao() {
-    const nome = document.getElementById('edit-nome').value;
-    const cargo = document.getElementById('edit-cargo').value;
-    const consultoria = document.getElementById('edit-consultoria').value;
-    const linkedin = document.getElementById('edit-linkedin').value; // Novo campo
-    const senioridade = document.getElementById('edit-senioridade').value;
-    const proximoCargo = document.getElementById('edit-proximo-cargo').value;
-    const distanciaCargo = document.getElementById('edit-distancia-cargo').value;
-    const email = document.getElementById('edit-email').value;
-    const celular = document.getElementById('edit-celular').value;
-    const principalStack = document.getElementById('edit-principal-stack').value;
-    const stackSecundaria = document.getElementById('edit-stack-secundaria').value;
-    const conhecimento = document.getElementById('edit-conhecimento').value;
-    const linkDetalhe = document.getElementById('edit-link-detalhe').value;
-    const linkCliente = document.getElementById('edit-link-cliente').value;
-    const previewContainer = document.getElementById('preview-container');
-    const fotoBase64 = previewContainer.getAttribute('data-image'); // Captura a imagem colada ou selecionada
+    // Verifica se cada elemento existe antes de acessar o valor
+    const nome = document.getElementById('edit-nome') ? document.getElementById('edit-nome').value : '';
+    const cargo = document.getElementById('edit-cargo') ? document.getElementById('edit-cargo').value : '';
+    const consultoria = document.getElementById('edit-consultoria') ? document.getElementById('edit-consultoria').value : '';
+    const linkedin = document.getElementById('edit-linkedin') ? document.getElementById('edit-linkedin').value : '';
+    const senioridade = document.getElementById('edit-senioridade') ? document.getElementById('edit-senioridade').value : '';
+    const proximoCargo = document.getElementById('edit-proximo-cargo') ? document.getElementById('edit-proximo-cargo').value : '';
+    const distanciaCargo = document.getElementById('edit-distancia-cargo') ? document.getElementById('edit-distancia-cargo').value : '';
+    const email = document.getElementById('edit-email') ? document.getElementById('edit-email').value : '';
+    const celular = document.getElementById('edit-celular') ? document.getElementById('edit-celular').value : '';
+    const principalStack = document.getElementById('edit-principal-stack') ? document.getElementById('edit-principal-stack').value : '';
+    const stackSecundaria = document.getElementById('edit-stack-secundaria') ? document.getElementById('edit-stack-secundaria').value : '';
+    const conhecimento = document.getElementById('edit-conhecimento') ? document.getElementById('edit-conhecimento').value : '';
+    const linkDetalhe = document.getElementById('edit-link-detalhe') ? document.getElementById('edit-link-detalhe').value : '';
+    const linkCliente = document.getElementById('edit-link-cliente') ? document.getElementById('edit-link-cliente').value : '';
 
+    // Captura a imagem em Base64 da pré-visualização
+    const previewContainer = document.getElementById('preview-container');
+    const fotoBase64 = previewContainer ? previewContainer.getAttribute('data-image') : null;
+
+    if (!previewContainer) {
+        console.error('Elemento de pré-visualização não encontrado.');
+        return;
+    }
+
+    // Referência do card no banco de dados
     const cardRef = database.ref(`${editSquadIndex}/cards/${editCardIndex}`);
-    cardRef.once('value', (snapshot) => {
+
+    cardRef.once('value', async (snapshot) => {
         const card = snapshot.val() || {};
         card.nome = nome;
         card.cargo = cargo;
         card.consultoria = consultoria;
-        card.linkedin = linkedin; // Salva o LinkedIn
+        card.linkedin = linkedin;
         card.senioridade = senioridade;
         card.proximoCargo = proximoCargo;
         card.distanciaCargo = distanciaCargo;
@@ -323,16 +345,41 @@ function salvarEdicao() {
         card.linkDetalhe = linkDetalhe;
         card.linkCliente = linkCliente;
 
-        if (fotoBase64) {
-            card.foto = fotoBase64; // Salva a imagem em base64
+        // Compressão e upload da imagem se ela existir
+        if (fotoBase64 && fotoBase64.startsWith('data:image')) {
+            const file = base64ToBlob(fotoBase64.split(',')[1], 'image/jpeg');
+            try {
+                // Compressão da imagem
+                const options = {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 800,
+                    useWebWorker: true
+                };
+                const imagemComprimida = await imageCompression(file, options);
+
+                // Upload para o Firebase Storage
+                const filePath = `cards/${editCardIndex}.jpg`;
+                const storageRef = firebase.storage().ref().child(filePath);
+                await storageRef.put(imagemComprimida);
+                const imageUrl = await storageRef.getDownloadURL();
+
+                card.fotoUrl = imageUrl;
+                if (card.foto) delete card.foto;
+
+                await cardRef.update(card);
+                console.log(`Imagem otimizada e salva: ${imageUrl}`);
+            } catch (error) {
+                console.error('Erro ao otimizar ou salvar imagem:', error);
+            }
+        } else {
+            await cardRef.update(card);
         }
 
-        cardRef.set(card).then(() => {
-            fecharModal();
-            renderizarSquads();
-        });
+        fecharModal();
+        renderizarSquads();
     });
 }
+
 
 // Associa a função salvarEdicao ao botão de salvar
 //document.getElementById('salvar-button').addEventListener('click', salvarEdicao);
@@ -349,17 +396,51 @@ function fecharModal() {
 function excluirCard(squadPath, cardId) {
     if (!modoEdicao) return;
 
-    const cardRef = database.ref(`${squadPath}/cards/${cardId}`);
-    cardRef.remove();
+    // Adiciona a confirmação antes de prosseguir
+    confirmarAcao('Tem certeza de que deseja excluir este card?', async () => {
+        const cardRef = database.ref(`${squadPath}/cards/${cardId}`);
+        cardRef.once('value', async (snapshot) => {
+            const card = snapshot.val();
+
+            if (card && card.fotoUrl) {
+                // Se o card possui uma imagem no Storage, excluí-la primeiro
+                const storageRef = firebase.storage().refFromURL(card.fotoUrl);
+                try {
+                    await storageRef.delete();
+                    console.log(`Imagem do card ${card.nome || 'Sem nome'} removida do Storage.`);
+                } catch (error) {
+                    console.error('Erro ao excluir a imagem do Storage:', error);
+                }
+            }
+
+            // Remover o card do banco de dados
+            try {
+                await cardRef.remove();
+                console.log(`Card ${card.nome || 'Sem nome'} removido do banco de dados.`);
+                renderizarSquads(); // Atualiza a renderização dos squads
+            } catch (error) {
+                console.error('Erro ao excluir o card do banco de dados:', error);
+            }
+        });
+    });
 }
+
 
 // Função para excluir um squad específico
 function excluirSquad(squadPath) {
     if (!modoEdicao) return;
 
-    const squadRef = database.ref(squadPath);
-    squadRef.remove();
-    renderizarSquads();
+    // Adiciona a confirmação antes de prosseguir
+    confirmarAcao('Tem certeza de que deseja excluir este squad?', async () => {
+        const squadRef = database.ref(squadPath);
+        try {
+            await squadRef.remove();
+            console.log(`Squad removido do banco de dados.`);
+            renderizarSquads(); // Atualiza a renderização dos squads
+        } catch (error) {
+            console.error('Erro ao excluir o squad do banco de dados:', error);
+        }
+    });
 }
 
 // Função para atualizar o nome do squad
@@ -585,3 +666,31 @@ function percorrerSquads(squad, pessoas) {
         });
     }
 }
+
+
+// Função para converter Base64 para Blob
+function base64ToBlob(base64, contentType) {
+    const byteCharacters = atob(base64);
+    const byteArrays = [];
+
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+    }
+
+    return new Blob(byteArrays, { type: contentType });
+}
+
+// Função para mostrar um diálogo de confirmação
+function confirmarAcao(mensagem, callback) {
+    const confirmacao = window.confirm(mensagem); // Exibe uma caixa de diálogo de confirmação
+    if (confirmacao) {
+        callback(); // Executa a função passada se o usuário confirmar
+    }
+}
+
